@@ -1,0 +1,14 @@
+{
+  "name": "life-coach-ai",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Life Coach AI助手",
+  "main": "server.js",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.0",
+    "mysql2": "^3.9.1"
+  }
+}

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Coach AI 历史对话</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .header {
+            padding: 20px;
+            background: #4a90e2;
+            color: white;
+            font-size: 1.2em;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .conversation {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            padding: 15px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .user-message {
+            background-color: #e3f2fd;
+        }
+
+        .ai-message {
+            background-color: #f5f5f5;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .message-content {
+            line-height: 1.5;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            padding: 8px 15px;
+            border: none;
+            background: #4a90e2;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .pagination button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: #357abd;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #4a90e2;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← 返回聊天</a>
+        <div class="header">历史对话记录</div>
+        <div id="conversations"></div>
+        <div class="pagination">
+            <button id="prevPage" disabled>上一页</button>
+            <button id="nextPage" disabled>下一页</button>
+        </div>
+    </div>
+
+    <script>
+        const conversationsContainer = document.getElementById('conversations');
+        const prevPageButton = document.getElementById('prevPage');
+        const nextPageButton = document.getElementById('nextPage');
+        let currentPage = 1;
+        const pageSize = 10;
+
+        async function fetchConversations(page) {
+            try {
+                const response = await fetch(`http://localhost:3000/history?page=${page}&pageSize=${pageSize}`);
+                if (!response.ok) throw new Error('获取历史记录失败');
+                return await response.json();
+            } catch (error) {
+                console.error('获取历史记录失败:', error);
+                return { conversations: [], totalPages: 0 };
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function displayConversations(conversations) {
+            conversationsContainer.innerHTML = '';
+            conversations.forEach(conversation => {
+                const conversationDiv = document.createElement('div');
+                conversationDiv.className = 'conversation';
+
+                // 用户消息
+                const userMessageDiv = document.createElement('div');
+                userMessageDiv.className = 'message user-message';
+                userMessageDiv.innerHTML = `
+                    <div class="message-header">
+                        <span>用户</span>
+                        <span>${formatDate(conversation.user_message.created_at)}</span>
+                    </div>
+                    <div class="message-content">${conversation.user_message.content}</div>
+                `;
+
+                // AI回复
+                const aiMessageDiv = document.createElement('div');
+                aiMessageDiv.className = 'message ai-message';
+                aiMessageDiv.innerHTML = `
+                    <div class="message-header">
+                        <span>AI助手</span>
+                        <span>${formatDate(conversation.ai_message.created_at)}</span>
+                    </div>
+                    <div class="message-content">${conversation.ai_message.content}</div>
+                `;
+
+                conversationDiv.appendChild(userMessageDiv);
+                conversationDiv.appendChild(aiMessageDiv);
+                conversationsContainer.appendChild(conversationDiv);
+            });
+        }
+
+        async function loadPage(page) {
+            const { conversations, totalPages } = await fetchConversations(page);
+            displayConversations(conversations);
+            currentPage = page;
+            
+            prevPageButton.disabled = page <= 1;
+            nextPageButton.disabled = page >= totalPages;
+        }
+
+        prevPageButton.onclick = () => loadPage(currentPage - 1);
+        nextPageButton.onclick = () => loadPage(currentPage + 1);
+
+        // 初始加载
+        loadPage(1);
+    </script>
+</body>
+</html>
